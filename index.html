@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://mimitakarak1k1barcodetool-default-rtdb.asia-southeast1.firebasedatabase.app https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; img-src 'self' data: blob:; media-src 'self'; frame-src 'self' blob:; frame-ancestors 'none';">
+  <title>條碼掃描器</title>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" integrity="sha384-c9d8RFSL+u3exBOJ4Yp3HUJXS4znl9f+z66d1y54ig+ea249SpqR+w1wyvXz/lk+" crossorigin="anonymous"></script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #000; color: #fff; min-height: 100dvh; display: flex; flex-direction: column; }
+    .app { flex: 1; display: flex; flex-direction: column; padding: 16px; gap: 12px; }
+    h1 { font-size: 18px; font-weight: 600; text-align: center; color: #ccc; padding: 8px 0; }
+    #reader { width: 100%; max-width: 480px; margin: 0 auto; border-radius: 12px; overflow: hidden; }
+    #reader video { border-radius: 12px; }
+    .controls { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    button { padding: 12px 32px; font-size: 16px; font-weight: 500; border: none; border-radius: 8px; cursor: pointer; background: #007aff; color: #fff; transition: opacity .15s; }
+    button:active { opacity: .7; }
+    button:disabled { opacity: .4; cursor: not-allowed; }
+    .status { text-align: center; font-size: 14px; color: #888; min-height: 20px; }
+    #result { padding: 12px; border-radius: 8px; transition: background .15s; }
+    #result.success { background: #1a8c4a; color: #fff; }
+    #resultClean { text-align: center; font-size: 24px; font-weight: 700; word-break: break-all; }
+    #resultRaw { text-align: center; font-size: 12px; color: #888; word-break: break-all; margin-top: 4px; }
+    #result.success #resultRaw { color: #b8e6c0; }
+    .footer { text-align: center; font-size: 12px; color: #555; padding: 8px; }
+    .manual-section { border-top: 1px solid #333; padding-top: 12px; margin-top: 4px; }
+    .manual-label { font-size: 14px; color: #888; margin-bottom: 8px; }
+    #manualInput { width: 100%; padding: 14px 16px; font-size: 20px; font-weight: 600; border: 2px solid #444; border-radius: 8px; background: #111; color: #fff; outline: none; transition: border-color .15s; letter-spacing: 2px; }
+    #manualInput:focus { border-color: #007aff; }
+    #manualInput::placeholder { font-size: 16px; font-weight: 400; letter-spacing: 0; color: #555; }
+    .manual-actions { display: flex; gap: 12px; margin-top: 8px; }
+    .manual-actions button { flex: 1; padding: 12px; font-size: 15px; }
+    #manualClearBtn { background: #555; }
+    .camera-extras { display: none; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap; min-height: 36px; }
+    .camera-extras.visible { display: flex; }
+    .torch-btn { padding: 6px 14px; font-size: 13px; border-radius: 6px; border: 1px solid #555; background: #222; color: #fff; cursor: pointer; }
+    .torch-btn.active { background: #ffcc00; color: #000; border-color: #ffcc00; }
+    .zoom-controls { display: flex; align-items: center; gap: 6px; }
+    .zoom-controls button { padding: 6px 12px; font-size: 16px; border-radius: 6px; border: 1px solid #555; background: #222; color: #fff; cursor: pointer; min-width: 32px; }
+    .zoom-label { font-size: 13px; color: #aaa; min-width: 36px; text-align: center; font-variant-numeric: tabular-nums; }
+    .zoom-presets { display: none; gap: 6px; justify-content: center; flex-wrap: wrap; }
+    .zoom-preset { padding: 4px 12px; font-size: 12px; border-radius: 12px; border: 1px solid #555; background: #222; color: #aaa; cursor: pointer; }
+    .camera-block { display: flex; flex-direction: column; gap: 12px; }
+    .camera-sidebar { display: flex; flex-direction: column; gap: 12px; }
+    @media (orientation: landscape) and (max-height: 520px) {
+      .camera-block { flex-direction: row; align-items: flex-start; }
+      .camera-block #reader { flex: 1; max-width: 60%; }
+      .camera-sidebar { flex: 0 0 auto; min-width: 140px; padding-left: 8px; }
+    }
+    .pairing-section { border-top: 1px solid #333; padding-top: 12px; }
+    .pairing-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    #pairingCodeInput { width: 90px; padding: 8px; font-size: 16px; font-weight: 600; text-align: center; letter-spacing: 2px; border: 2px solid #444; border-radius: 6px; background: #111; color: #fff; outline: none; font-family: monospace; }
+    #pairingCodeInput:focus { border-color: #007aff; }
+    #pairingScanBtn { padding: 8px 14px; font-size: 13px; border: 1px solid #007aff; border-radius: 6px; background: transparent; color: #007aff; cursor: pointer; white-space: nowrap; }
+    #pairingScanBtn:active { opacity: .7; }
+    .result-actions { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; justify-content: center; }
+    #resendBtn { padding: 6px 16px; font-size: 13px; border-radius: 6px; border: 1px solid #007aff; background: transparent; color: #007aff; cursor: pointer; display: none; }
+    #resendBtn:active { opacity: .7; }
+    #resendBtn:disabled { opacity: .4; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>📷 條碼掃描器</h1>
+
+    <div class="pairing-section">
+      <div class="pairing-row">
+        <input type="text" id="pairingCodeInput" maxlength="8" placeholder="輸入配對碼" autocomplete="off">
+        <button id="pairingScanBtn" title="掃描電腦上的 QR Code 自動配對">📱 掃描 QR</button>
+      </div>
+    </div>
+
+    <div class="camera-block">
+      <div id="reader"></div>
+      <div class="camera-sidebar">
+        <div class="controls">
+          <button id="startBtn">▶ 開始掃描</button>
+          <button id="stopBtn" disabled>⏹ 停止</button>
+        </div>
+        <div class="camera-extras" id="cameraExtras">
+          <button class="torch-btn" id="torchBtn">🔦 閃光燈</button>
+          <div class="zoom-controls" id="zoomControls">
+            <button id="zoomOut">−</button>
+            <span class="zoom-label" id="zoomLabel">1.0x</span>
+            <button id="zoomIn">+</button>
+          </div>
+          <div class="zoom-presets" id="zoomPresets">
+            <button class="zoom-preset" data-zoom="min">原倍率</button>
+            <button class="zoom-preset" data-zoom="1.5">1.5x</button>
+            <button class="zoom-preset" data-zoom="2">2x</button>
+          </div>
+        </div>
+        <div class="status" id="status">準備就緒</div>
+        <div id="result">
+          <div id="resultClean"></div>
+          <div id="resultRaw"></div>
+          <div class="result-actions">
+            <button id="resendBtn">↻ 再發送</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="manual-section">
+      <div class="manual-label">✏️ 手動輸入</div>
+      <input type="text" id="manualInput" placeholder="鍵入條碼序號..." autocomplete="off" spellcheck="false">
+      <div class="manual-actions">
+        <button id="manualSendBtn">📤 送出</button>
+        <button id="manualClearBtn">🗑 清空</button>
+      </div>
+    </div>
+
+    <div class="footer">掃描後自動傳送至電腦端</div>
+  </div>
+
+  <script src="app.js" integrity="sha384-agrLofnQRw+I67a6YkTO6Rn36VU47YMH9fUvCLWt2eso6g8LkBRcmb+l78G9ZWtX" crossorigin="anonymous"></script>
+</body>
+</html>
