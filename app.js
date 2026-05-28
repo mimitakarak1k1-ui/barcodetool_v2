@@ -189,7 +189,10 @@
             expiresAt: now + 20000
           })
         });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
+        if (!res.ok) {
+          const body = await res.text();
+          throw new Error('HTTP ' + res.status + (body ? ': ' + body.slice(0, 300) : ''));
+        }
         const data = await res.json();
         lastSentCode = code;
         resendBtn.style.display = 'inline-block';
