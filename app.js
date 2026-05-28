@@ -173,7 +173,7 @@
 
     async function sendToFirebase(code, raw, skipDebounce) {
       if (!code) { setStatus('⚠️ 空條碼，跳過'); return; }
-      const now = Date.now();
+      const now = Date.now() - 5000;
       if (!skipDebounce && code === lastCode && now - lastTime < DEBOUNCE_MS) return;
       lastCode = code;
       lastTime = now;
@@ -276,6 +276,7 @@
       readerEl.innerHTML = '';
       readerEl.appendChild(video);
       await video.play();
+      readerEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
@@ -355,6 +356,7 @@
           (code) => onScanSuccess(cleanCode(code), code),
           onScanFailure
         );
+        readerEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
         isScanning = true;
         startBtn.disabled = true;
@@ -389,6 +391,7 @@
         torchBtn.textContent = '🔦 閃光燈';
         cameraExtras.classList.remove('visible');
         setStatus('⏸ 已停止');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
 
       if (html5QrCode && isScanning) {
@@ -401,6 +404,7 @@
         startBtn.disabled = false;
         stopBtn.disabled = true;
         setStatus('⏸ 已停止');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }
 
