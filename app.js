@@ -36,13 +36,21 @@
         const user = firebase.auth().currentUser;
         if (user) authToken = await user.getIdToken(true);
       } catch (_) {}
-    }, 55 * 60 * 1000);
+    }, 30 * 60 * 1000);
 
-    async function fbFetch(url, options) {
+    async function fbFetch(url, options, retried = false) {
       if (authToken === null) await authPromise;
       if (!authToken) return fetch(url, options);
       const separator = url.includes('?') ? '&' : '?';
-      return fetch(url + separator + 'auth=' + encodeURIComponent(authToken), options);
+      const res = await fetch(url + separator + 'auth=' + encodeURIComponent(authToken), options);
+      if (res.status === 401 && !retried) {
+        try {
+          const user = firebase.auth().currentUser;
+          if (user) authToken = await user.getIdToken(true);
+        } catch (_) { authToken = ''; }
+        if (authToken) return fbFetch(url, options, true);
+      }
+      return res;
     }
 
     const readerEl = document.getElementById('reader');
