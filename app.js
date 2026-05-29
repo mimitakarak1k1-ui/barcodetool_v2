@@ -276,6 +276,7 @@
       readerEl.innerHTML = '';
       readerEl.appendChild(video);
       await video.play();
+      document.querySelector('.app').classList.add('camera-active');
       readerEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
       const canvas = document.createElement('canvas');
@@ -356,6 +357,7 @@
           (code) => onScanSuccess(cleanCode(code), code),
           onScanFailure
         );
+        document.querySelector('.app').classList.add('camera-active');
         readerEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
         isScanning = true;
@@ -390,6 +392,7 @@
         torchBtn.classList.remove('active');
         torchBtn.textContent = '🔦 閃光燈';
         cameraExtras.classList.remove('visible');
+        document.querySelector('.app').classList.remove('camera-active');
         setStatus('⏸ 已停止');
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
@@ -403,6 +406,7 @@
         isScanning = false;
         startBtn.disabled = false;
         stopBtn.disabled = true;
+        document.querySelector('.app').classList.remove('camera-active');
         setStatus('⏸ 已停止');
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
